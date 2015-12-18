@@ -1,39 +1,28 @@
 Georges Manager
 ===============
 
-**This repo is work in progress. Actually nothing works.**
+**This repo is work in progress.**
 
-This project used:
-* ETCD
-* Vulcand
-* Syntax file of docker-compose
+Demo
+----
 
-
-Dev help
---------
-
-### Start ETCD
-
+Execute the following command :
 ```
-docker run -p 2380:2380 -p 7001:7001 -p 2379:2379 -p 4001:4001 --rm -it quay.io/coreos/etcd --advertise-client-urls 'http://0.0.0.0:2379,http://0.0.0.0:4001'  --listen-client-urls 'http://0.0.0.0:2379,http://0.0.0.0:4001' --initial-advertise-peer-urls 'http://0.0.0.0:2380,http://0.0.0.0:7001' --listen-peer-urls 'http://0.0.0.0:2380,http://0.0.0.0:7001' --initial-cluster 'default=http://0.0.0.0:2380,default=http://0.0.0.0:7001'
-```
-
-### Start Vulcand
-
-```
-docker run --rm -it -p 8182:8182 -p 8181:8181 mailgun/vulcand:v0.8.0-beta.2 /go/bin/vulcand -apiInterface=0.0.0.0 --etcd=http://172.17.0.20:4001
+echo '127.0.0.1 test.preprod.local' >> /etc/hosts
+docker-compose up
+mkdir /tmp/test
+cd /tmp/test
+cat  > docker-compose.yml <<EOF
+web:
+  image: jlordiales/python-micro-service
+  hostname: host1
+EOF
+tar cfz test.tar.gz docker-compose.yml
+curl 127.0.0.1:8080/start-service -XPOST --data-binary '@test.tar.gz' -v
 ```
 
-### Setup backend
+Find the port of haproxy :
+```docker inspect --format='{{(index (index .NetworkSettings.Ports "80/tcp") 0).HostPort}}' georgesmanager_haproxy_1```
 
-```
-etcdctl set /vulcand/backends/b1/servers/srv1 '{"URL": "http://172.17.0.22"}'
-etcdctl set /vulcand/backends/b2/servers/srv1 '{"URL": "http://172.17.0.30"}'
-```
-
-### Setup frontend
-
-```
-etcdctl set /vulcand/frontends/f1/frontend '{"Type": "http", "BackendId": "b1", "Route": "Host(`localhost`) && Path(`/`)"}'
-etcdctl set /vulcand/frontends/f2/frontend '{"Type": "http", "BackendId": "b2", "Route": "Host(`seguins`) && Path(`/`)"}'
-```
+Open your browser, enter : ```http://test.preprod.local:<port>``` :
+You should see ```Hello World from host1```

@@ -1,0 +1,20 @@
+consul:
+  image: progrium/consul
+  ports:
+    - "8500:8500"
+  command: -server -bootstrap -ui-dir /ui
+app:
+  build: .
+  links:
+    - consul
+  volumes:
+    - ./:/go/src/github.com/seguins/georges-manager
+    - /var/run/docker.sock:/var/run/docker.sock
+  ports:
+    - "8080:8080"
+haproxy:
+  build: haproxy
+  links:
+    - consul
+  ports:
+    - "80"

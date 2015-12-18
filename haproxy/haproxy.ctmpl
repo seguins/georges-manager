@@ -1,0 +1,20 @@
+defaults
+  log     global
+  mode    http
+  timeout connect 5000
+  timeout client  50000
+  timeout server  50000
+
+frontend http
+  bind :80
+  mode http
+
+{{range ls "sites"}}
+  acl is_{{.Key}} hdr_dom(host) -i {{.Key}}.preprod.local
+  use_backend backend_{{.Key}} if is_{{.Key}}
+{{end}}
+
+{{range ls "sites"}}
+backend backend_{{.Key}}
+  server {{.Key}} {{.Value}}
+{{end}}
